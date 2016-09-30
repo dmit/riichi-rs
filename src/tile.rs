@@ -92,20 +92,20 @@ pub enum Tile {
 impl Tile {
     fn icon(&self) -> Icon {
         match *self {
-            Tile::Pin(_, icon) => icon,
-            Tile::Sou(_, icon) => icon,
-            Tile::Wan(_, icon) => icon,
-            Tile::Wind(_, icon) => icon,
+            Tile::Pin(_, icon) |
+            Tile::Sou(_, icon) |
+            Tile::Wan(_, icon) |
+            Tile::Wind(_, icon) |
             Tile::Dragon(_, icon) => icon,
         }
     }
 
     fn same_type(a: Tile, b: Tile) -> bool {
         match (a, b) {
-            (Tile::Pin(..), Tile::Pin(..)) => true,
-            (Tile::Sou(..), Tile::Sou(..)) => true,
-            (Tile::Wan(..), Tile::Wan(..)) => true,
-            (Tile::Wind(..), Tile::Wind(..)) => true,
+            (Tile::Pin(..), Tile::Pin(..)) |
+            (Tile::Sou(..), Tile::Sou(..)) |
+            (Tile::Wan(..), Tile::Wan(..)) |
+            (Tile::Wind(..), Tile::Wind(..)) |
             (Tile::Dragon(..), Tile::Dragon(..)) => true,
             _ => false,
         }
@@ -120,8 +120,8 @@ impl Eq for Tile {}
 impl PartialEq for Tile {
     fn eq(&self, other: &Tile) -> bool {
         match (*self, *other) {
-            (Tile::Pin(a, _), Tile::Pin(b, _)) => a == b,
-            (Tile::Sou(a, _), Tile::Sou(b, _)) => a == b,
+            (Tile::Pin(a, _), Tile::Pin(b, _)) |
+            (Tile::Sou(a, _), Tile::Sou(b, _)) |
             (Tile::Wan(a, _), Tile::Wan(b, _)) => a == b,
             (Tile::Wind(a, _), Tile::Wind(b, _)) => a == b,
             (Tile::Dragon(a, _), Tile::Dragon(b, _)) => a == b,
@@ -255,9 +255,9 @@ trait Tiles {
 
     fn fmt_impl(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let str = self.iter()
-                      .map(|t| format!("{}", t))
-                      .collect::<Vec<String>>()
-                      .join(" ");
+            .map(|t| format!("{}", t))
+            .collect::<Vec<String>>()
+            .join(" ");
         write!(f, "{}", str)
     }
 }
@@ -273,7 +273,7 @@ pub struct Hand(Vec<Tile>);
 impl Hand {
     pub fn new(tiles: &[Tile]) -> Hand {
         let mut hand = Vec::with_capacity(4 * 4 + 2); // four kans + head
-        hand.extend(tiles);
+        hand.extend_from_slice(tiles);
         hand.sort();
 
         Hand(hand)
@@ -315,10 +315,10 @@ impl Hand {
                         pairs += 1;
                         prev = None;
                     } else {
-                        prev = Some(tile.clone());
+                        prev = Some(*tile);
                     }
                 }
-                None => prev = Some(tile.clone()),
+                None => prev = Some(*tile),
             }
         }
 
@@ -367,34 +367,26 @@ impl Hand {
 
     fn group_type(tiles: &[Tile]) -> Option<Group> {
         let same_type = tiles.iter()
-                             .skip(1)
-                             .all(|&t| Tile::same_type(t, tiles[0]));
+            .skip(1)
+            .all(|&t| Tile::same_type(t, tiles[0]));
         let same_value = tiles.iter()
-                              .skip(1)
-                              .all(|&t| t == tiles[0]);
+            .skip(1)
+            .all(|&t| t == tiles[0]);
 
         match (tiles.len(), same_type, same_value) {
             (4, true, true) => Some(Group::Kan),
             (3, true, true) => Some(Group::Pon),
             (3, true, false) => {
                 let consecutive = match (tiles[0], tiles[1], tiles[2]) {
-                    (Tile::Pin(a, _), Tile::Pin(b, _), Tile::Pin(c, _)) => {
-                        b as i8 - a as i8 == 1 && c as i8 - b as i8 == 1
-                    }
-                    (Tile::Sou(a, _), Tile::Sou(b, _), Tile::Sou(c, _)) => {
-                        b as i8 - a as i8 == 1 && c as i8 - b as i8 == 1
-                    }
+                    (Tile::Pin(a, _), Tile::Pin(b, _), Tile::Pin(c, _)) |
+                    (Tile::Sou(a, _), Tile::Sou(b, _), Tile::Sou(c, _)) |
                     (Tile::Wan(a, _), Tile::Wan(b, _), Tile::Wan(c, _)) => {
                         b as i8 - a as i8 == 1 && c as i8 - b as i8 == 1
                     }
                     _ => false,
                 };
 
-                if consecutive {
-                    Some(Group::Chi)
-                } else {
-                    None
-                }
+                if consecutive { Some(Group::Chi) } else { None }
             }
             _ => None,
         }
@@ -462,6 +454,4 @@ impl fmt::Display for Set {
 }
 
 #[cfg(test)]
-mod tests {
-
-}
+mod tests {}
